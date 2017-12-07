@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.mercacortex.ad_trabajo_t2.MainActivity"
+    >
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tilImagenes"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Imágenes"
+        app:layout_constraintBottom_toTopOf="@+id/tilFrases"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/edtImagenes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="alumno.mobi/~alumno/superior/casielles/imagenes.txt"
+            android:ems="10" />
+    </android.support.design.widget.TextInputLayout>
+
+    <android.support.design.widget.TextInputLayout
+        android:id="@+id/tilFrases"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Frases"
+        app:layout_constraintBottom_toTopOf="@+id/imvImagen"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tilImagenes">
+
+        <android.support.design.widget.TextInputEditText
+            android:id="@+id/edtFrases"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="alumno.mobi/~alumno/superior/casielles/frases.txt"
+            android:ems="10" />
+    </android.support.design.widget.TextInputLayout>
+
+    <ImageView
+        android:id="@+id/imvImagen"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tilFrases"
+        app:layout_constraintBottom_toTopOf="@id/txvFrases"
+        />
+
+    <TextView
+        android:id="@+id/txvFrases"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Resultado"
+        android:textAlignment="center"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"
+        app:layout_constraintBottom_toTopOf="@+id/btnDescarga"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imvImagen"
+        />
+
+    <Button
+        android:id="@+id/btnDescarga"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Descarga"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:onClick="onClick"
+        />
+
+
+</android.support.constraint.ConstraintLayout>
