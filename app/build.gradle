@@ -16,8 +16,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
     useLibrary 'org.apache.http.legacy'
+    buildToolsVersion '26.0.2'
 }
 
 dependencies {

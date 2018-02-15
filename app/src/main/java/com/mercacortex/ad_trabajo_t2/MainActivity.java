@@ -2,9 +2,9 @@ package com.mercacortex.ad_trabajo_t2;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
@@ -14,8 +14,6 @@ import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.FileAsyncHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
-import com.loopj.android.http.TextHttpResponseHandler;
 import com.mercacortex.ad_trabajo_t2.utils.Memoria;
 import com.mercacortex.ad_trabajo_t2.utils.RestClient;
 import com.mercacortex.ad_trabajo_t2.utils.Resultado;
@@ -23,10 +21,8 @@ import com.squareup.picasso.Picasso;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Date;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -68,30 +64,25 @@ import cz.msebera.android.httpclient.Header;
  */
 public class MainActivity extends AppCompatActivity {
 
+    private static final String FICHERO_FRASES = "frases.txt";
+    private static final String FICHERO_IMAGENES = "imagenes.txt";
+    private static final String FICHERO_INTERVALO = "intervalo";
+    private static final String FICHERO_ERROR = "errores.txt";
+    private static final long DURACION = 120000; //120 segundos
+    private static final String WEB = "http://192.168.0.139/acceso/php/upload.php";
+    private static final String WEB_ERROR = "http://alumno.mobi/diaz/errores.txt";
+    private static final String PASSWORD = "123";
     private EditText edtImagenes;
     private EditText edtFrases;
     private TextView txvFrases;
     private ImageView imvImagen;
     private Memoria memoria;
     private ProgressDialog progress;
-
     private String frases, imagenes;
     private boolean frasesDescargadas = false;
     private boolean imagenesDescargadas = false;
     private long intervalo = 5000L;
-
     private CountDownTimer timer;
-
-    private static final String FICHERO_FRASES = "frases.txt";
-    private static final String FICHERO_IMAGENES = "imagenes.txt";
-    private static final String FICHERO_INTERVALO = "intervalo";
-    private static final String FICHERO_ERROR = "errores.txt";
-
-    private static final long DURACION = 120000; //120 segundos
-
-    private static final String WEB = "http://alumno.mobi/~alumno/superior/casielles/php/upload.php";
-    private static final String WEB_ERROR = "http://alumno.mobi/~alumno/superior/casielles/errores.txt";
-    private static final String PASSWORD = "123";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,23 +100,18 @@ public class MainActivity extends AppCompatActivity {
         Resultado resultado = memoria.leerRaw(FICHERO_INTERVALO);
         if (resultado.getCodigo())
             intervalo = Long.parseLong(resultado.getContenido());
-        else
-            descargaError("Error leyendo archivo de intervalo");
     }
 
     /**
-     * Lo llama el botón de descarga
+     * Se descarga el fichero
      * @param view Botón
      */
     public void onClick(View view) {
-        //Comprueba primero que se haga la descarga antes de cargar las imágenes
-        if(!frasesDescargadas || !imagenesDescargadas) {
-            download(edtFrases.getText().toString(), FICHERO_FRASES);
-            download(edtImagenes.getText().toString(), FICHERO_IMAGENES);
-            onDownLoadFinished();
-        } else
-            onDownLoadFinished();
+        //Primero tendría que ser la descarga de uno y luego la del otro
+        download(edtFrases.getText().toString(), FICHERO_FRASES);
+        download(edtImagenes.getText().toString(), FICHERO_IMAGENES);
     }
+
     /**
      * Crea un temporizador de 2 minutos que cambia de imagen y frase según
      * el intervalo indicado en el archivo intervalos.txt
@@ -159,74 +145,25 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Descarga desde la ruta al fichero local indicados
-     * @param path Ruta remota del archivo de texto origen
-     * @param localPath Ruta local del archivo de texto destino
+     * @param origin Ruta origen del archivo de descarga
+     * @param destination Ruta destino del archivo descargado
      */
-    private void download(String path, final String localPath) {
-        if (!path.startsWith("http://") && !path.startsWith("https://"))
-            path = "http://" + path;
-        RestClient.get(path, new FileAsyncHttpResponseHandler(this) {
-            @Override
-            public void onStart() {
-                progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-                progress.setMessage("Conectando . . .");
-                progress.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    public void onCancel(DialogInterface dialog) {
-                        RestClient.cancelRequests(getApplicationContext(), true);
-                    }
-                });
-                progress.show();
-            }
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
-                progress.dismiss();
-                descargaError("Fallo en la conexión");
-            }
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, File response) {
-                progress.dismiss();
-                try {
-                    BufferedReader reader = new BufferedReader(new FileReader(file));
-                    StringBuilder content = new StringBuilder();
-                    String line;
-                    while((line = reader.readLine()) != null)
-                        content.append(line).append("\n");
-                    reader.close();
-                    if (memoria.disponibleEscritura()) {
-                        memoria.escribirExterna(localPath, content.toString(), false, Memoria.UTF8);
-                        //Toast.makeText(MainActivity.this, "Escritura con éxito en: " + localPath, Toast.LENGTH_SHORT).show();
-                        if (memoria.disponibleLectura()) {
-                            Resultado resultado = memoria.leerExterna(localPath, Memoria.UTF8);
-                            switch (localPath){
-                                case FICHERO_FRASES:
-                                    if(resultado.getCodigo()) {
-                                        frases = resultado.getContenido();
-                                        frasesDescargadas = resultado.getCodigo();
-                                    }
-                                    break;
-                                case FICHERO_IMAGENES:
-                                    if(resultado.getCodigo()) {
-                                        imagenesDescargadas = resultado.getCodigo();
-                                        imagenes = resultado.getContenido();
-                                    }
-                                    break;
-                            }
-                            onDownLoadFinished();
-                        } else
-                            descargaError("No se leyó el archivo");
-                    } else
-                        descargaError("No se escribió el archivo");
-                } catch (IOException e) {
-                    descargaError("Fallo de lectura del archivo");
-                } catch (Exception e) {
-                    descargaError("Error: " + e.getMessage());
-                }
-            }
-        });
+    private void download(String origin, String destination) {
+        if (!origin.startsWith("http://") && !origin.startsWith("https://"))
+            origin = "http://" + origin;
+        new FileAsynTask().execute(origin, destination);
+        //Hago operaciones pertinentes según la ruta
+        switch (destination) {
+            case FICHERO_FRASES:
+                break;
+            case FICHERO_IMAGENES:
+                break;
+        }
     }
+
     private void cambiaImagenFrase(String frase, final String miRuta) {
         txvFrases.setText(frase);
-        RestClient.get(miRuta, new AsyncHttpResponseHandler() {
+        new RestClient().get(miRuta, new AsyncHttpResponseHandler() {
                 @Override
                 public void onSuccess(int statusCode, Header[] headers, byte[] responseBody) {
                     Picasso.with(MainActivity.this)
@@ -237,78 +174,87 @@ public class MainActivity extends AppCompatActivity {
                 }
                 @Override
                 public void onFailure(int statusCode, Header[] headers, byte[] responseBody, Throwable error) {
-                    descargaError("No se puede descargar de: " + miRuta);
+                    mostrarMensaje("Error: fallo al descargar la imagen");
                 }
             });
     }
-    private void descargaError(final String errorMsg) {
-        //Toast.makeText(MainActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
-        final StringBuilder content = new StringBuilder();
-        final Resultado[] resultado = { new Resultado() };
 
-        //Descarga el contenido del archivo de errores remoto
-        RestClient.get(WEB_ERROR, new FileAsyncHttpResponseHandler(this) {
-            @Override
-            public void onStart() {
-                //Toast.makeText(MainActivity.this, "Conexión correcta con el servidor", Toast.LENGTH_SHORT).show();
-            }
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
-                Toast.makeText(MainActivity.this, "Fallo en la conexión", Toast.LENGTH_SHORT).show();
-            }
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, File response) {
-                try {
-                    BufferedReader reader = new BufferedReader(new FileReader(file));
-                    String line;
-                    while((line = reader.readLine()) != null)
-                        content.append(line).append("\n");
-                    reader.close();
-                    //Añade el nuevo error al archivo de errores remoto
-                    content.append("[").append(new Date()).append("]: ").append(errorMsg).append("\n");
-                    if (memoria.disponibleEscritura()) {
-                        memoria.escribirExterna(FICHERO_ERROR, content.toString(), true, Memoria.UTF8);
-                        //Toast.makeText(MainActivity.this, "Escritura con éxito en: " + FICHERO_ERROR, Toast.LENGTH_SHORT).show();
-                        if (memoria.disponibleLectura())
-                            resultado[0] = memoria.leerExterna(FICHERO_ERROR, Memoria.UTF8);
-                        else
-                            Toast.makeText(MainActivity.this, "No se leyó el archivo", Toast.LENGTH_SHORT).show();
-                    }
-                    subidaError(resultado);
-                } catch (IOException e) {
-                    Toast.makeText(MainActivity.this, "Fallo de lectura del archivo", Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-    }
-
-    private void subidaError(Resultado[] resultado) {
-        if(resultado[0].getCodigo()) {
-            RequestParams params = new RequestParams();
-            try {
-                params.put("fileToUpload", new File(Environment.getExternalStorageDirectory(), FICHERO_ERROR));
-                params.put("password", PASSWORD);
-                RestClient.post(WEB, params, new TextHttpResponseHandler() {
-                    @Override
-                    public void onStart() {
-                        Toast.makeText(MainActivity.this, "Actualizando archivo de errores...", Toast.LENGTH_SHORT).show();
-                    }
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, String response) {
-                        Toast.makeText(MainActivity.this, "Archivo errores actualizado. Código: " + statusCode + " " + response, Toast.LENGTH_SHORT).show();
-                    }
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, String response, Throwable t) {
-                        Toast.makeText(MainActivity.this, "Fallo actualizando archivo de errores. Código: " + statusCode + " " + t.getMessage() + " " + response, Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } catch (FileNotFoundException e) {
-                Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
+    /**
+     * Método que escribe en memoria un fichero
+     *
+     * @param file Fichero que escribir
+     * @param path Ruta en la memoria externa
+     */
+    private void writeInMemory(File file, String path) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        StringBuilder content = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null)
+            content.append(line).append("\n");
+        reader.close();
+        if (memoria.disponibleEscritura()) {
+            memoria.escribirExterna(path, content.toString(), false, Memoria.UTF8);
         } else
-            Toast.makeText(MainActivity.this, "Error leyendo archivo de errores local", Toast.LENGTH_SHORT).show();
+            mostrarMensaje("Error: no se escribió el archivo");
     }
 
+    private void mostrarMensaje(String mensaje) {
+        Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Clase que inicia la descarga de los ficheros necesarios
+     */
+    class FileAsynTask extends AsyncTask<String, Void, String> {
+        File downloadFile;
+        private RestClient restClient;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progress.setMessage("Conectando . . .");
+            restClient = new RestClient();
+            progress.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                public void onCancel(DialogInterface dialog) {
+                    restClient.cancelRequests(MainActivity.this, true);
+                }
+            });
+            progress.show();
+        }
+
+        @Override
+        protected String doInBackground(String... args) {
+            restClient.get(args[0], new FileAsyncHttpResponseHandler(MainActivity.this) {
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
+                    cancel(true);
+                }
+
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, File response) {
+                    downloadFile = response;
+                }
+            });
+            return args[1];
+        }
+
+        @Override
+        protected void onPostExecute(String destination) {
+            super.onPostExecute(destination);
+            progress.dismiss();
+            try {
+                writeInMemory(downloadFile, destination);
+            } catch (IOException e) {
+                mostrarMensaje("Error: fallo en la descarga");
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            progress.dismiss();
+        }
+
+    }
 }

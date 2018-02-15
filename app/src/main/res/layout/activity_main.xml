@@ -20,8 +20,9 @@
             android:id="@+id/edtImagenes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="alumno.mobi/~alumno/superior/casielles/imagenes.txt"
-            android:ems="10" />
+            android:ems="10"
+            android:text="http://alumno.mobi/superior/diaz/enlaces.txt"
+            />
     </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout
@@ -38,18 +39,19 @@
             android:id="@+id/edtFrases"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="alumno.mobi/~alumno/superior/casielles/frases.txt"
-            android:ems="10" />
+            android:ems="10"
+            android:text="http://alumno.mobi/superior/diaz/Frases.txt"
+            />
     </android.support.design.widget.TextInputLayout>
 
     <ImageView
         android:id="@+id/imvImagen"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/txvFrases"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tilFrases"
-        app:layout_constraintBottom_toTopOf="@id/txvFrases"
         />
 
     <TextView
@@ -69,11 +71,11 @@
         android:id="@+id/btnDescarga"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:onClick="onClick"
         android:text="Descarga"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:onClick="onClick"
         />
 
 
