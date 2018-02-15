@@ -2,9 +2,11 @@ package com.mercacortex.ad_trabajo_t2;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
@@ -13,7 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.loopj.android.http.AsyncHttpResponseHandler;
-import com.loopj.android.http.FileAsyncHttpResponseHandler;
+import com.mercacortex.ad_trabajo_t2.service.ServiceAsyncHttpResponseHandler;
 import com.mercacortex.ad_trabajo_t2.utils.Memoria;
 import com.mercacortex.ad_trabajo_t2.utils.RestClient;
 import com.mercacortex.ad_trabajo_t2.utils.Resultado;
@@ -67,11 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String FICHERO_FRASES = "frases.txt";
     private static final String FICHERO_IMAGENES = "imagenes.txt";
     private static final String FICHERO_INTERVALO = "intervalo";
-    private static final String FICHERO_ERROR = "errores.txt";
     private static final long DURACION = 120000; //120 segundos
-    private static final String WEB = "http://192.168.0.139/acceso/php/upload.php";
-    private static final String WEB_ERROR = "http://alumno.mobi/diaz/errores.txt";
-    private static final String PASSWORD = "123";
     private EditText edtImagenes;
     private EditText edtFrases;
     private TextView txvFrases;
@@ -140,7 +138,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        timer.cancel();
     }
 
     /**
@@ -151,14 +148,12 @@ public class MainActivity extends AppCompatActivity {
     private void download(String origin, String destination) {
         if (!origin.startsWith("http://") && !origin.startsWith("https://"))
             origin = "http://" + origin;
-        new FileAsynTask().execute(origin, destination);
-        //Hago operaciones pertinentes según la ruta
-        switch (destination) {
-            case FICHERO_FRASES:
-                break;
-            case FICHERO_IMAGENES:
-                break;
-        }
+        Intent intent = new Intent(this, ServiceAsyncHttpResponseHandler.class);
+        Bundle bundle = new Bundle();
+        bundle.putString(MyIntentService.INTENT_DATA_SOURCE, origin);
+        bundle.putString(MyIntentService.INTENT_DATA_DESTINATION, destination);
+        intent.putExtras(bundle);
+        startService(intent);
     }
 
     private void cambiaImagenFrase(String frase, final String miRuta) {
@@ -225,17 +220,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected String doInBackground(String... args) {
-            restClient.get(args[0], new FileAsyncHttpResponseHandler(MainActivity.this) {
-                @Override
-                public void onFailure(int statusCode, Header[] headers, Throwable throwable, File file) {
-                    cancel(true);
-                }
-
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, File response) {
-                    downloadFile = response;
-                }
-            });
+            downloadFile = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), args[1]);
             return args[1];
         }
 
@@ -243,11 +228,6 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(String destination) {
             super.onPostExecute(destination);
             progress.dismiss();
-            try {
-                writeInMemory(downloadFile, destination);
-            } catch (IOException e) {
-                mostrarMensaje("Error: fallo en la descarga");
-            }
         }
 
         @Override

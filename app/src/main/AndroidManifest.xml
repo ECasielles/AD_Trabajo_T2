@@ -23,6 +23,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service android:name=".service.ServiceAsyncHttpResponseHandler"/>
+        <receiver android:name=".MyBroadcastReceiver">
+            <intent-filter>
+                <action android:name="com.mercacortex.ad_trabajo_t2.success"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.mercacortex.ad_trabajo_t2.failure"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
