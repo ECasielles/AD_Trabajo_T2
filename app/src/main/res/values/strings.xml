@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">AD_Trabajo_T2</string>
+    <string name="download_complete">Descarga completada</string>
+    <string name="fun">¡Yeah, baby!</string>
+    <string name="exception">Error de descarga:</string>
+    <string name="downloading">Descargando...</string>
 </resources>

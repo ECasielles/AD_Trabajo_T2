@@ -5,7 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-
+/**
+ * SÓLO RECIBE NOTIFICACIONES. No se comunica con la activity
+ * por ser menos eficiente. Una activity implementará
+ * su propio BroadcastReceiver local.
+ */
 public class MyBroadcastReceiver extends BroadcastReceiver {
 
     public static final String TAG = "MyBroadcastReceiver";

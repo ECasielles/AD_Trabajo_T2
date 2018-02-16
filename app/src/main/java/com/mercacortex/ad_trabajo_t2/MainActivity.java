@@ -1,13 +1,18 @@
 package com.mercacortex.ad_trabajo_t2;
 
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -66,10 +71,31 @@ import cz.msebera.android.httpclient.Header;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String FICHERO_FRASES = "frases.txt";
+    private static final String FICHERO_FRASES = "Frases.txt";
     private static final String FICHERO_IMAGENES = "imagenes.txt";
     private static final String FICHERO_INTERVALO = "intervalo";
     private static final long DURACION = 120000; //120 segundos
+    private static final String TAG = "MainActivity";
+    /**
+     * Handler de intent propios de la activity
+     */
+    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case MyIntentService.INTENT_ACTION_FAILURE:
+                    Log.d(TAG, "Descarga sin éxito " + intent.getStringExtra(MyIntentService.INTENT_DATA_SOURCE));
+                    //descargaError(intent)
+                    //descargaError(origin)
+                    break;
+                case MyIntentService.INTENT_ACTION_SUCCESS:
+                    Log.d(TAG, "Descarga con éxito " + intent.getStringExtra(MyIntentService.INTENT_DATA_SOURCE));
+                    //change(intent);
+                    //change(origin);
+                    break;
+            }
+        }
+    };
     private EditText edtImagenes;
     private EditText edtFrases;
     private TextView txvFrases;
@@ -110,10 +136,44 @@ public class MainActivity extends AppCompatActivity {
         download(edtImagenes.getText().toString(), FICHERO_IMAGENES);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //Podríamos hacerlo en onStart, lo que quiero es que sea visible la activity
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MyIntentService.INTENT_ACTION_FAILURE);
+        intentFilter.addAction(MyIntentService.INTENT_ACTION_SUCCESS);
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiver, intentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //Saca el BroadcastReceiver del segundo plano
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+    }
+
+    /**
+     * Descarga desde la ruta al fichero local indicados
+     *
+     * @param origin      Ruta origen del archivo de descarga
+     * @param destination Ruta destino del archivo descargado
+     */
+    private void download(String origin, String destination) {
+        if (!origin.startsWith("http://") && !origin.startsWith("https://"))
+            origin = "http://" + origin;
+        Intent intent = new Intent(this, ServiceAsyncHttpResponseHandler.class);
+        Bundle bundle = new Bundle();
+        bundle.putString(MyIntentService.INTENT_DATA_SOURCE, origin);
+        bundle.putString(MyIntentService.INTENT_DATA_DESTINATION, destination);
+        intent.putExtras(bundle);
+        startService(intent);
+    }
+
     /**
      * Crea un temporizador de 2 minutos que cambia de imagen y frase según
      * el intervalo indicado en el archivo intervalos.txt
-     */
+     *//*
     private void onDownLoadFinished() {
         //Comprueba que se hayan realizado las descargas antes de mostrar nada
         if(frasesDescargadas && imagenesDescargadas)
@@ -133,27 +193,11 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "Mostradas todas las imágenes. ¡2 veces!", Toast.LENGTH_LONG).show();
                 }
             }.start();
-    }
+    }*/
 
     @Override
     protected void onStop() {
         super.onStop();
-    }
-
-    /**
-     * Descarga desde la ruta al fichero local indicados
-     * @param origin Ruta origen del archivo de descarga
-     * @param destination Ruta destino del archivo descargado
-     */
-    private void download(String origin, String destination) {
-        if (!origin.startsWith("http://") && !origin.startsWith("https://"))
-            origin = "http://" + origin;
-        Intent intent = new Intent(this, ServiceAsyncHttpResponseHandler.class);
-        Bundle bundle = new Bundle();
-        bundle.putString(MyIntentService.INTENT_DATA_SOURCE, origin);
-        bundle.putString(MyIntentService.INTENT_DATA_DESTINATION, destination);
-        intent.putExtras(bundle);
-        startService(intent);
     }
 
     private void cambiaImagenFrase(String frase, final String miRuta) {
